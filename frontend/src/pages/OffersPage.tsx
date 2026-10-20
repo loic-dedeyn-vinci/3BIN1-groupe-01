@@ -1,8 +1,11 @@
+import { useState } from "react";
 import EmptyState from "../components/EmptyState.tsx";
 import ErrorState from "../components/ErrorState.tsx";
 import LoadingState from "../components/LoadingState.tsx";
 import OfferTable from "../components/OfferTable.tsx";
+import PeriodFilter from "../components/PeriodFilter.tsx";
 import { useOffers } from "../hooks/useOffers.ts";
+import type { PeriodCode } from "../models/offer.ts";
 import type { User } from "../models/user.ts";
 
 interface OffersPageProps {
@@ -18,7 +21,12 @@ const DESCRIPTIONS = {
 } as const;
 
 const OffersPage = ({ user, token, onUnauthorized }: OffersPageProps) => {
-  const { offers, isLoading, error } = useOffers(token, onUnauthorized);
+  const [period, setPeriod] = useState<PeriodCode | "">("");
+  const { offers, isLoading, error } = useOffers(
+    token,
+    period === "" ? undefined : period,
+    onUnauthorized,
+  );
 
   const renderContent = () => {
     if (error) return <ErrorState message={error} />;
@@ -38,6 +46,7 @@ const OffersPage = ({ user, token, onUnauthorized }: OffersPageProps) => {
     <section>
       <h1>Offres de stage</h1>
       <p>{DESCRIPTIONS[user.kind]}</p>
+      <PeriodFilter value={period} onChange={setPeriod} />
       {renderContent()}
     </section>
   );
