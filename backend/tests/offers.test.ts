@@ -97,3 +97,101 @@ describe("GET /offers : visibilité selon le profil", () => {
     );
   });
 });
+
+describe("GET /offers : filtre par période (?period=)", () => {
+  it("filtre les offres pour la période P1", async () => {
+    const response = await request(app)
+      .get("/offers?period=P1")
+      .set("Authorization", tokenFor("ADMIN", ADMINISTRATOR.ANNE_LECLERCQ));
+
+    expect(response.status).toBe(200);
+    expect(response.body).toHaveLength(1);
+    expect(offerIds(response.body)).toEqual([OFFER.PDF_REPORTS]);
+    expect(response.body[0].period).toBe("P1");
+  });
+
+  it("filtre les offres pour la période P2", async () => {
+    const response = await request(app)
+      .get("/offers?period=P2")
+      .set("Authorization", tokenFor("ADMIN", ADMINISTRATOR.ANNE_LECLERCQ));
+
+    expect(response.status).toBe(200);
+    expect(response.body).toHaveLength(7);
+    expect(response.body.every((o: { period: string }) => o.period === "P2")).toBe(true);
+  });
+
+  it("filtre les offres pour la période OTHER", async () => {
+    const response = await request(app)
+      .get("/offers?period=OTHER")
+      .set("Authorization", tokenFor("ADMIN", ADMINISTRATOR.ANNE_LECLERCQ));
+
+    expect(response.status).toBe(200);
+    expect(response.body).toHaveLength(2);
+    expect(offerIds(response.body)).toEqual([OFFER.CONSULTANT_PLANNING, OFFER.E2E_TESTS]);
+    expect(response.body.every((o: { period: string }) => o.period === "OTHER")).toBe(true);
+  });
+
+  it("combine le filtre par période avec la visibilité étudiant (uniquement publiées)", async () => {
+    const response = await request(app)
+      .get("/offers?period=P2")
+      .set("Authorization", tokenFor("STUDENT", STUDENT.LUCAS_DUPONT));
+
+    expect(response.status).toBe(200);
+    expect(offerIds(response.body)).toEqual([
+      OFFER.INTERNAL_CHATBOT,
+      OFFER.DATA_QUALITY,
+      OFFER.FLEET_APP,
+      OFFER.BILLING_API,
+    ]);
+    expect(
+      response.body.every(
+        (o: { period: string; status: string }) => o.period === "P2" && o.status === "PUBLISHED",
+      ),
+    ).toBe(true);
+  });
+
+  it("renvoie une liste vide si l'étudiant filtre sur une période sans offre publiée", async () => {
+    const response = await request(app)
+      .get("/offers?period=P1")
+      .set("Authorization", tokenFor("STUDENT", STUDENT.LUCAS_DUPONT));
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual([]);
+  });
+
+  it("combine le filtre par période avec la visibilité déposant (ses propres offres)", async () => {
+    const response = await request(app)
+      .get("/offers?period=OTHER")
+      .set("Authorization", tokenFor("CONTACT", CONTACT.MARC_LEJEUNE));
+
+    expect(response.status).toBe(200);
+    expect(offerIds(response.body)).toEqual([OFFER.E2E_TESTS]);
+  });
+
+  it("ignore un paramètre vide et renvoie toutes les offres visibles", async () => {
+    const response = await request(app)
+      .get("/offers?period=")
+      .set("Authorization", tokenFor("STUDENT", STUDENT.LUCAS_DUPONT));
+
+    expect(response.status).toBe(200);
+    expect(response.body).toHaveLength(4);
+  });
+
+  it("refuse un code de période inconnu (400)", async () => {
+    const response = await request(app)
+      .get("/offers?period=INVALIDE")
+      .set("Authorization", tokenFor("ADMIN", ADMINISTRATOR.ANNE_LECLERCQ));
+
+    expect(response.status).toBe(400);
+    expect(response.body.error.code).toBe("INVALID_QUERY");
+  });
+
+  it("refuse un paramètre period répété (400)", async () => {
+    const response = await request(app)
+      .get("/offers?period=P1&period=P2")
+      .set("Authorization", tokenFor("ADMIN", ADMINISTRATOR.ANNE_LECLERCQ));
+
+    expect(response.status).toBe(400);
+    expect(response.body.error.code).toBe("INVALID_QUERY");
+  });
+});

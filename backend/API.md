@@ -142,6 +142,10 @@ récente à la plus ancienne, puis de la plus récente à la plus ancienne.
 | Contact déposant | Les offres qu'il a déposées, quel que soit leur statut |
 | Contact sans rôle de déposant | Aucun accès (403) |
 
+### Paramètres de requête (query)
+
+- `period` *(facultatif)* : filtre sur le code de la période (`P1`, `P2` ou `OTHER`). Sans ce paramètre, toutes les offres visibles selon le profil sont retournées.
+
 ### Requête
 
 - Header `Authorization` obligatoire
@@ -166,5 +170,6 @@ récente à la plus ancienne, puis de la plus récente à la plus ancienne.
 `period` vaut `P1`, `P2` ou `OTHER`. `status` vaut `SUBMITTED` (soumise), `PENDING`
 (en attente), `PUBLISHED` (publiée), `ASSIGNED` (attribuée) ou `ARCHIVED` (archivée).
 
+- `400` `INVALID_QUERY` : paramètre `period` répété ou valeur non reconnue (autre que `P1`, `P2`, `OTHER`).
 - `401` `UNAUTHENTICATED` : session absente ou invalide.
 - `403` `FORBIDDEN` : contact seulement promoteur ou signataire.
