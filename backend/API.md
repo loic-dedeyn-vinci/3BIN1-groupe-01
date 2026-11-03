@@ -173,3 +173,41 @@ récente à la plus ancienne, puis de la plus récente à la plus ancienne.
 - `400` `INVALID_QUERY` : paramètre `period` répété ou valeur non reconnue (autre que `P1`, `P2`, `OTHER`).
 - `401` `UNAUTHENTICATED` : session absente ou invalide.
 - `403` `FORBIDDEN` : contact seulement promoteur ou signataire.
+
+## Candidatures étudiant
+
+Les routes de candidatures sont réservées aux étudiants authentifiés. L'étudiant est
+toujours déterminé par le jeton de session, jamais par un identifiant fourni par le client.
+
+### GET /applications
+
+Retourne les candidatures de l'étudiant connecté, y compris celles qui ont été retirées.
+
+- `200` : tableau de candidatures avec `id`, `offerId`, `offerTitle`, `companyShortName`,
+  `message`, `status` et `appliedAt`.
+- `status` vaut `IN_PROGRESS`, `SELECTED`, `REJECTED` ou `WITHDRAWN`.
+- `401` `UNAUTHENTICATED` : session absente ou invalide.
+- `403` `FORBIDDEN` : utilisateur qui n'est pas étudiant.
+
+### POST /applications
+
+Crée une candidature pour une offre publiée.
+
+```json
+{ "offerId": 7, "message": "Mon message facultatif" }
+```
+
+- `201` : candidature créée avec le statut `IN_PROGRESS`.
+- `400` `INVALID_BODY` : identifiant invalide, message non textuel ou message de plus de
+  2 000 caractères.
+- `404` `NOT_FOUND` : offre inexistante.
+- `409` `CONFLICT` : offre non publiée ou candidature déjà existante.
+
+### DELETE /applications/:id
+
+Retire logiquement une candidature en cours. La ligne est conservée et son statut devient
+`WITHDRAWN`; il ne s'agit pas d'une suppression SQL.
+
+- `200` : candidature avec le statut `WITHDRAWN`.
+- `404` `NOT_FOUND` : candidature inexistante ou appartenant à un autre étudiant.
+- `409` `CONFLICT` : candidature déjà traitée ou déjà retirée.

@@ -106,4 +106,21 @@ describe("OffersPage", () => {
 
     await waitFor(() => expect(onUnauthorized).toHaveBeenCalled());
   });
+
+  it("affiche un message compréhensible si la candidature existe déjà", async () => {
+    const publishedOffer = { ...offers[0], status: "PUBLISHED" };
+    stubFetch({
+      "/api/offers": () => Response.json([publishedOffer]),
+      "/api/applications": () => new Response(null, { status: 409 }),
+    });
+
+    render(<OffersPage user={studentUser} token="jeton" onUnauthorized={vi.fn()} />);
+
+    fireEvent.click(await screen.findByRole("button", { name: "Candidater" }));
+    fireEvent.click(screen.getByRole("button", { name: "Envoyer" }));
+
+    expect(
+      await screen.findByText("Une seule candidature est autorisée par offre."),
+    ).toBeInTheDocument();
+  });
 });
