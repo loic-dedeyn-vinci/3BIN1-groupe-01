@@ -43,9 +43,31 @@ describe("GET /applications", () => {
       },
     ]);
   });
+
+  it("isole les candidatures entre deux étudiants", async () => {
+    const lucasResponse = await applicationsAs(STUDENT.LUCAS_DUPONT);
+    const mateuszResponse = await applicationsAs(STUDENT.MATEUSZ_KOWALSKI);
+
+    expect(lucasResponse.status).toBe(200);
+    expect(lucasResponse.body.map((application: { id: number }) => application.id)).toEqual([
+      APPLICATION.LUCAS_FLEET_APP,
+    ]);
+    expect(mateuszResponse.status).toBe(200);
+    expect(mateuszResponse.body.map((application: { id: number }) => application.id)).toEqual([
+      APPLICATION.MATEUSZ_CLOUD_MIGRATION,
+    ]);
+  });
 });
 
 describe("POST /applications", () => {
+  it("refuse une requête sans session", async () => {
+    const response = await request(app)
+      .post("/applications")
+      .send({ offerId: OFFER.INTERNAL_CHATBOT });
+
+    expect(response.status).toBe(401);
+  });
+
   it("crée une candidature avec un message facultatif", async () => {
     const response = await request(app)
       .post("/applications")
@@ -79,6 +101,16 @@ describe("POST /applications", () => {
     expect(response.status).toBe(409);
   });
 
+  it("refuse une offre inexistante", async () => {
+    const response = await request(app)
+      .post("/applications")
+      .set("Authorization", tokenFor("STUDENT", STUDENT.LUCAS_DUPONT))
+      .send({ offerId: 999 });
+
+    expect(response.status).toBe(404);
+    expect(response.body.error.code).toBe("NOT_FOUND");
+  });
+
   it("valide le corps de la requête", async () => {
     const response = await request(app)
       .post("/applications")
@@ -103,6 +135,15 @@ describe("DELETE /applications/:id", () => {
     expect(list.body[0].status).toBe("WITHDRAWN");
   });
 
+  it("refuse le retrait d'une candidature déjà retirée", async () => {
+    const response = await request(app)
+      .delete(`/applications/${APPLICATION.INES_BILLING_API}`)
+      .set("Authorization", tokenFor("STUDENT", STUDENT.INES_HADDAD));
+
+    expect(response.status).toBe(409);
+    expect(response.body.error.code).toBe("CONFLICT");
+  });
+
   it("refuse le retrait d'une candidature traitée", async () => {
     const response = await request(app)
       .delete(`/applications/${APPLICATION.MATEUSZ_CLOUD_MIGRATION}`)
@@ -118,5 +159,14 @@ describe("DELETE /applications/:id", () => {
       .set("Authorization", tokenFor("STUDENT", STUDENT.INES_HADDAD));
 
     expect(response.status).toBe(404);
+  });
+
+  it("refuse un identifiant de candidature invalide", async () => {
+    const response = await request(app)
+      .delete("/applications/invalide")
+      .set("Authorization", tokenFor("STUDENT", STUDENT.LUCAS_DUPONT));
+
+    expect(response.status).toBe(400);
+    expect(response.body.error.code).toBe("INVALID_QUERY");
   });
 });

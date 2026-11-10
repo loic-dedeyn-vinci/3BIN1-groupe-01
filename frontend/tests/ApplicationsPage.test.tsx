@@ -22,9 +22,35 @@ const applications = [
     status: "WITHDRAWN",
     appliedAt: "2026-09-30 10:30:00",
   },
+  {
+    id: 3,
+    offerId: 6,
+    offerTitle: "Migration cloud",
+    companyShortName: "Datavia",
+    message: null,
+    status: "SELECTED",
+    appliedAt: "2026-09-28 09:00:00",
+  },
+  {
+    id: 4,
+    offerId: 6,
+    offerTitle: "Migration cloud",
+    companyShortName: "Datavia",
+    message: null,
+    status: "REJECTED",
+    appliedAt: "2026-09-27 09:00:00",
+  },
 ];
 
 describe("ApplicationsPage", () => {
+  it("affiche un message lorsqu'il n'y a aucune candidature", async () => {
+    stubFetch({ "/api/applications": () => Response.json([]) });
+
+    render(<ApplicationsPage token="jeton" onUnauthorized={vi.fn()} />);
+
+    expect(await screen.findByText("Vous n'avez encore aucune candidature.")).toBeInTheDocument();
+  });
+
   it("affiche les candidatures et leurs statuts français", async () => {
     stubFetch({ "/api/applications": () => Response.json(applications) });
 
@@ -33,7 +59,10 @@ describe("ApplicationsPage", () => {
     expect(await screen.findByText("Application React de gestion de flotte")).toBeInTheDocument();
     expect(screen.getByText("En cours")).toBeInTheDocument();
     expect(screen.getByText("Retirée")).toBeInTheDocument();
+    expect(screen.getByText("Retenue")).toBeInTheDocument();
+    expect(screen.getByText("Non retenue")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Retirer" })).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "Retirer" })).toHaveLength(1);
   });
 
   it("retire une candidature après confirmation et recharge la liste", async () => {
@@ -54,5 +83,20 @@ describe("ApplicationsPage", () => {
       ),
     );
     expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
+
+  it("n'envoie aucune requête si le retrait est annulé", async () => {
+    const fetchMock = stubFetch({ "/api/applications": () => Response.json(applications) });
+    vi.stubGlobal("confirm", vi.fn(() => false));
+
+    render(<ApplicationsPage token="jeton" onUnauthorized={vi.fn()} />);
+    await screen.findByText("En cours");
+    fireEvent.click(screen.getByRole("button", { name: "Retirer" }));
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).not.toHaveBeenCalledWith(
+      "/api/applications/1",
+      expect.objectContaining({ method: "DELETE" }),
+    );
   });
 });

@@ -123,4 +123,41 @@ describe("OffersPage", () => {
       await screen.findByText("Une seule candidature est autorisée par offre."),
     ).toBeInTheDocument();
   });
+
+  it("soumet une candidature avec le message saisi", async () => {
+    const publishedOffer = { ...offers[0], status: "PUBLISHED" };
+    const fetchMock = stubFetch({
+      "/api/offers": () => Response.json([publishedOffer]),
+      "/api/applications": () =>
+        Response.json({
+          id: 7,
+          offerId: publishedOffer.id,
+          offerTitle: publishedOffer.title,
+          companyShortName: publishedOffer.companyShortName,
+          message: "Ma motivation",
+          status: "IN_PROGRESS",
+          appliedAt: "2026-11-10 14:00:00",
+        }),
+    });
+
+    render(<OffersPage user={studentUser} token="jeton" onUnauthorized={vi.fn()} />);
+
+    fireEvent.click(await screen.findByRole("button", { name: "Candidater" }));
+    fireEvent.change(screen.getByLabelText("Message (facultatif)"), {
+      target: { value: "Ma motivation" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Envoyer" }));
+
+    await waitFor(() =>
+      expect(fetchMock).toHaveBeenCalledWith(
+        "/api/applications",
+        expect.objectContaining({
+          method: "POST",
+          headers: { Authorization: "jeton", "Content-Type": "application/json" },
+          body: JSON.stringify({ offerId: publishedOffer.id, message: "Ma motivation" }),
+        }),
+      ),
+    );
+    expect(await screen.findByText("Candidature envoyée.")).toBeInTheDocument();
+  });
 });
