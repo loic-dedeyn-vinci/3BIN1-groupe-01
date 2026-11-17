@@ -65,6 +65,15 @@ describe("ApplicationsPage", () => {
     expect(screen.getAllByRole("button", { name: "Retirer" })).toHaveLength(1);
   });
 
+  it("signale une session expirée lors du chargement", async () => {
+    const onUnauthorized = vi.fn();
+    stubFetch({ "/api/applications": () => new Response(null, { status: 401 }) });
+
+    render(<ApplicationsPage token="jeton" onUnauthorized={onUnauthorized} />);
+
+    await waitFor(() => expect(onUnauthorized).toHaveBeenCalled());
+  });
+
   it("retire une candidature après confirmation et recharge la liste", async () => {
     const fetchMock = stubFetch({
       "/api/applications/1": () => Response.json({ ...applications[0], status: "WITHDRAWN" }),
@@ -83,6 +92,38 @@ describe("ApplicationsPage", () => {
       ),
     );
     expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
+
+  it("affiche une erreur 409 lors du retrait", async () => {
+    stubFetch({
+      "/api/applications/1": () => new Response(null, { status: 409 }),
+      "/api/applications": () => Response.json(applications),
+    });
+    vi.stubGlobal("confirm", vi.fn(() => true));
+
+    render(<ApplicationsPage token="jeton" onUnauthorized={vi.fn()} />);
+    await screen.findByText("En cours");
+    fireEvent.click(screen.getByRole("button", { name: "Retirer" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Retrait de la candidature impossible (statut 409)",
+    );
+  });
+
+  it("affiche une erreur 500 lors du retrait", async () => {
+    stubFetch({
+      "/api/applications/1": () => new Response(null, { status: 500 }),
+      "/api/applications": () => Response.json(applications),
+    });
+    vi.stubGlobal("confirm", vi.fn(() => true));
+
+    render(<ApplicationsPage token="jeton" onUnauthorized={vi.fn()} />);
+    await screen.findByText("En cours");
+    fireEvent.click(screen.getByRole("button", { name: "Retirer" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Retrait de la candidature impossible (statut 500)",
+    );
   });
 
   it("n'envoie aucune requête si le retrait est annulé", async () => {

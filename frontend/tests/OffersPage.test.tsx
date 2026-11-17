@@ -76,6 +76,46 @@ describe("OffersPage", () => {
     );
   });
 
+  it("transmet la recherche par titre avec le filtre de période", async () => {
+    const fetchMock = stubFetch({
+      "/api/offers": () => Response.json(offers),
+      "/api/offers?q=portail&period=P2": () => Response.json([offers[0]]),
+    });
+
+    render(<OffersPage user={contactUser} token="jeton" onUnauthorized={vi.fn()} />);
+    await screen.findByText("Refonte du portail client");
+
+    fireEvent.change(screen.getByLabelText("Rechercher par titre"), {
+      target: { value: "  portail " },
+    });
+    fireEvent.change(screen.getByLabelText("Filtrer par période"), { target: { value: "P2" } });
+
+    await waitFor(() =>
+      expect(fetchMock).toHaveBeenLastCalledWith(
+        "/api/offers?q=portail&period=P2",
+        expect.anything(),
+      ),
+    );
+  });
+
+  it("affiche un message adapté si aucune offre ne correspond à la recherche", async () => {
+    stubFetch({
+      "/api/offers": () => Response.json(offers),
+      "/api/offers?q=inexistant": () => Response.json([]),
+    });
+
+    render(<OffersPage user={contactUser} token="jeton" onUnauthorized={vi.fn()} />);
+    await screen.findByText("Refonte du portail client");
+
+    fireEvent.change(screen.getByLabelText("Rechercher par titre"), {
+      target: { value: "inexistant" },
+    });
+
+    expect(
+      await screen.findByText("Aucune offre ne correspond à la recherche."),
+    ).toBeInTheDocument();
+  });
+
   it("adapte la description au profil", async () => {
     stubFetch({ "/api/offers": () => Response.json([]) });
 

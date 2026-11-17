@@ -132,6 +132,9 @@ entreprises ; les autres utilisateurs ne voient que les entreprises actives.
 
 ## GET /offers
 
+Liste les offres accessibles selon le profil, éventuellement filtrées par période et par
+expression recherchée dans le titre.
+
 Liste les offres visibles par l'utilisateur connecté, de l'année académique la plus
 récente à la plus ancienne, puis de la plus récente à la plus ancienne.
 
@@ -144,7 +147,10 @@ récente à la plus ancienne, puis de la plus récente à la plus ancienne.
 
 ### Paramètres de requête (query)
 
-- `period` *(facultatif)* : filtre sur le code de la période (`P1`, `P2` ou `OTHER`). Sans ce paramètre, toutes les offres visibles selon le profil sont retournées.
+- `q` *(facultatif)* : expression cherchée dans le titre, sans tenir compte de la casse.
+  Les espaces externes sont ignorés et une valeur vide est ignorée. 100 caractères au maximum.
+- `period` *(facultatif)* : filtre sur le code de la période (`P1`, `P2` ou `OTHER`). Sans
+  ce paramètre, toutes les offres visibles selon le profil sont retournées.
 
 ### Requête
 
