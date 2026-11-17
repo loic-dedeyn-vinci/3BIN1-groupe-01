@@ -129,3 +129,6 @@ Avant de soumettre une modification ou d'ouvrir une PR (cf. `.github/pull_reques
 - [ ] Toute modification de schéma SQL fait l'objet d'un nouveau fichier de migration.
 - [ ] La conversation avec l'assistant de code est exportée dans `docs/semaine-N/` ou `docs/conversation-N.md`.
 
+**Règle obligatoire — Développement piloté par les tests (TDD)**
+
+Pour tout ajout de fonctionnalité ou correction de bug, lis et applique `.github/skills/test-driven-development/SKILL.md` avant de modifier le code de l’application. Écris et exécute les tests d’abord, présente-les, puis attends leur validation explicite avant l’implémentation. Cette règle ne concerne pas les demandes d’explication ou de documentation seules.

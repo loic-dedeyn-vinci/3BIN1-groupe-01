@@ -68,6 +68,15 @@ describe("POST /applications", () => {
     expect(response.status).toBe(401);
   });
 
+  it("réserve la création aux étudiants", async () => {
+    const response = await request(app)
+      .post("/applications")
+      .set("Authorization", tokenFor("ADMIN", ADMINISTRATOR.ANNE_LECLERCQ))
+      .send({ offerId: OFFER.INTERNAL_CHATBOT });
+
+    expect(response.status).toBe(403);
+  });
+
   it("crée une candidature avec un message facultatif", async () => {
     const response = await request(app)
       .post("/applications")
@@ -80,6 +89,56 @@ describe("POST /applications", () => {
       message: "Mon message de candidature",
       status: "IN_PROGRESS",
     });
+  });
+
+  it("crée une candidature sans message", async () => {
+    const response = await request(app)
+      .post("/applications")
+      .set("Authorization", tokenFor("STUDENT", STUDENT.LUCAS_DUPONT))
+      .send({ offerId: OFFER.INTERNAL_CHATBOT });
+
+    expect(response.status).toBe(201);
+    expect(response.body.message).toBeNull();
+  });
+
+  it("normalise un message vide en valeur nulle", async () => {
+    const response = await request(app)
+      .post("/applications")
+      .set("Authorization", tokenFor("STUDENT", STUDENT.LUCAS_DUPONT))
+      .send({ offerId: OFFER.INTERNAL_CHATBOT, message: "" });
+
+    expect(response.status).toBe(201);
+    expect(response.body.message).toBeNull();
+  });
+
+  it("normalise un message composé d'espaces en valeur nulle", async () => {
+    const response = await request(app)
+      .post("/applications")
+      .set("Authorization", tokenFor("STUDENT", STUDENT.LUCAS_DUPONT))
+      .send({ offerId: OFFER.INTERNAL_CHATBOT, message: "   " });
+
+    expect(response.status).toBe(201);
+    expect(response.body.message).toBeNull();
+  });
+
+  it("refuse un message numérique", async () => {
+    const response = await request(app)
+      .post("/applications")
+      .set("Authorization", tokenFor("STUDENT", STUDENT.LUCAS_DUPONT))
+      .send({ offerId: OFFER.INTERNAL_CHATBOT, message: 42 });
+
+    expect(response.status).toBe(400);
+    expect(response.body.error.code).toBe("INVALID_BODY");
+  });
+
+  it("refuse un message dépassant 2000 caractères", async () => {
+    const response = await request(app)
+      .post("/applications")
+      .set("Authorization", tokenFor("STUDENT", STUDENT.LUCAS_DUPONT))
+      .send({ offerId: OFFER.INTERNAL_CHATBOT, message: "x".repeat(2001) });
+
+    expect(response.status).toBe(400);
+    expect(response.body.error.code).toBe("INVALID_BODY");
   });
 
   it("refuse une offre non publiée", async () => {
@@ -123,6 +182,14 @@ describe("POST /applications", () => {
 });
 
 describe("DELETE /applications/:id", () => {
+  it("réserve le retrait aux étudiants", async () => {
+    const response = await request(app)
+      .delete(`/applications/${APPLICATION.LUCAS_FLEET_APP}`)
+      .set("Authorization", tokenFor("ADMIN", ADMINISTRATOR.ANNE_LECLERCQ));
+
+    expect(response.status).toBe(403);
+  });
+
   it("retire une candidature en cours sans la supprimer", async () => {
     const response = await request(app)
       .delete(`/applications/${APPLICATION.LUCAS_FLEET_APP}`)

@@ -5,9 +5,13 @@ import { isOfferList } from "../utils/guards.ts";
 export const getOffers = async (
   token: string,
   period?: PeriodCode,
+  search = "",
   signal?: AbortSignal,
 ): Promise<Offer[]> => {
   const params = new URLSearchParams();
+  if (search.trim() !== "") {
+    params.set("q", search.trim());
+  }
   if (period) {
     params.set("period", period);
   }
