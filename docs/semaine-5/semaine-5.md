@@ -257,30 +257,28 @@ Chromium et Firefox. La vérification globale du projet est réussie. La
 validation complète sur les trois navigateurs reste à effectuer après
 résolution des dépendances système nécessaires à WebKit.
 
-# 4. Vérification de la qualité des tests et comparaison des approches
+## 4. Vérifier la qualité des tests et comparer les approches
 
 ### 4.1. Vérification de la qualité des tests
 
 Pour vérifier que les tests E2E détectent réellement un défaut dans l'application, nous avons choisi le scénario 1 : la recherche d'une offre existante.
 
-Ce scénario vérifie trois éléments :
+Ce scénario vérifie :
 - La visibilité de l'offre « API REST de facturation ».
 - La présence du statut « Publiée ».
-- Le nombre de résultats affichés après le filtrage.
+- Le nombre de résultats affichés après filtrage.
 
 **Défaut temporaire introduit**
 
-Nous avons temporairement désactivé le filtrage des offres par titre dans le code applicatif.
-
-Ce défaut avait pour objectif de simuler un dysfonctionnement de la fonctionnalité de recherche : les offres ne correspondant pas au texte saisi pouvaient également apparaître dans les résultats.
+Nous avons temporairement désactivé le filtrage des offres par titre dans le code applicatif. Ce défaut avait pour objectif de simuler un dysfonctionnement de la fonctionnalité de recherche : les offres ne correspondant pas au texte saisi pouvaient également apparaître dans les résultats.
 
 **Échec du test**
 
 Après l'introduction du défaut, nous avons relancé le test automatisé du scénario 1 avec Playwright Test.
 
-Le test a détecté le problème au niveau de la vérification du nombre de résultats. Le comportement obtenu ne correspondait plus au résultat attendu dans le scénario : seule l'offre recherchée devait être affichée.
+Le test a détecté le problème au niveau de la vérification du nombre de résultats. Le comportement obtenu ne correspondait plus au résultat attendu : seule l'offre recherchée devait être affichée.
 
-Cet échec montre l'intérêt des assertions explicites : elles permettent de détecter une régression fonctionnelle et pas seulement de vérifier que la page se charge correctement.
+Cet échec montre l'intérêt des assertions explicites, qui permettent de détecter une régression fonctionnelle et pas seulement de vérifier que la page se charge correctement.
 
 **Restauration du code initial**
 
@@ -298,43 +296,16 @@ Aucun défaut temporaire ne doit être conservé dans la version finale de l'app
 
 **1. Que permet Playwright MCP dans la conversation avec l'agent ? Quelle action précise avez-vous vu passer par un outil MCP ?**
 
-Playwright MCP permet à GitHub Copilot d'interagir directement avec un navigateur grâce aux outils fournis par le serveur MCP.
-
-L'agent peut ouvrir une page, cliquer sur des éléments, saisir du texte et observer le contenu affiché dans l'application.
-
-Deux outils importants sont :
-- `browser_navigate` : permet de naviguer vers l'application locale.
-- `browser_snapshot` : permet de récupérer une représentation de l'état de la page.
-
-Ces outils permettent à l'agent d'explorer l'application et de vérifier son comportement directement depuis l'interface utilisateur.
+Playwright MCP permet à Copilot d'interagir directement avec le navigateur pour tester l'application, notamment en naviguant, cliquant et saisissant du texte. Nous avons observé l'utilisation de `browser_navigate` pour ouvrir l'application et de `browser_snapshot` pour observer son contenu.
 
 **2. Qu'apportent les scripts Playwright Test que le compte rendu d'un test par MCP n'apporte pas ?**
 
-Les scripts Playwright Test permettent de conserver des tests automatisés dans le projet, sous forme de fichiers versionnés et réexécutables.
-
-Contrairement à un simple compte rendu d'exploration par MCP, ils offrent :
-- Des vérifications reproductibles.
-- Des assertions explicites pour contrôler les résultats.
-- Une exécution indépendante de l'agent IA.
-- La possibilité d'intégrer les tests dans une chaîne CI/CD.
-- Un historique des modifications grâce au versionnement du code.
-
-Ils permettent ainsi de vérifier régulièrement que les fonctionnalités continuent de fonctionner après des modifications de l'application.
+Les scripts Playwright Test permettent de conserver des tests automatisés, reproductibles et versionnés. Ils peuvent être exécutés indépendamment de l'agent IA et intégrés dans une chaîne CI/CD. Ils fournissent également des assertions explicites permettant de vérifier précisément les résultats attendus.
 
 **3. Dans quel cas préféreriez-vous une exploration interactive avec MCP ? Dans quel cas préféreriez-vous un test automatisé ?**
 
-Je privilégierais Playwright MCP lors de la découverte d'une fonctionnalité, de l'exploration d'une interface ou de la recherche d'un problème difficile à reproduire.
-
-Cette approche est intéressante lorsque l'on souhaite laisser un agent interagir avec l'application et observer son comportement.
-
-Je privilégierais Playwright Test pour les vérifications régulières des fonctionnalités déjà développées.
-
-Les tests automatisés sont particulièrement adaptés aux scénarios qui doivent être exécutés plusieurs fois, notamment après chaque modification du code ou dans une chaîne CI/CD.
+MCP est préférable pour explorer une fonctionnalité, découvrir le comportement de l'application ou investiguer un problème de manière interactive. Les tests automatisés sont préférables pour vérifier régulièrement et de manière reproductible le bon fonctionnement des fonctionnalités, notamment après des modifications du code.
 
 **Conclusion**
 
-Playwright MCP et Playwright Test sont deux approches complémentaires.
-
-MCP facilite l'exploration interactive de l'application par un agent IA, tandis que Playwright Test permet de conserver des tests automatisés, reproductibles et indépendants de l'agent.
-
-L'utilisation des deux approches permet donc de faciliter l'exploration et d'améliorer la fiabilité des vérifications de l'application.
+Les deux approches sont complémentaires. MCP permet à l'agent d'interagir avec l'application, tandis que Playwright Test permet de conserver des vérifications exécutables indépendamment de l'agent. Le serveur MCP ne remplace donc pas une suite de tests automatisés.
